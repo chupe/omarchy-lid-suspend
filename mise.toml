@@ -24,7 +24,7 @@ depends = ["setup"]
 dir = "{{config_root}}"
 run = """
 qmllint -I "${OMARCHY_PATH:-/usr/share/omarchy}/shell" BarWidget.qml Service.qml
-shellcheck lid-power-profile uninstall-cleanup tests/*.bash
+shellcheck inhibitor-control lid-power-profile uninstall-cleanup tests/*.bash
 """
 
 [tasks.test]

@@ -81,6 +81,8 @@ mise run check
 - The unit belongs to `systemd --user`, not the shell, so a shell reload,
   restart, or crash neither drops nor duplicates the inhibitor. Every read of
   the flag reconciles the unit to it.
+- Inhibitor changes share a runtime-directory lock, so cleanup waits for an
+  acquisition that survived service teardown before performing the final stop.
 - While Ignore Lid Close is enabled, UPower lid events select `power-saver` on
   close. The profile active before close is saved under `$XDG_RUNTIME_DIR` and
   restored on open or disable, including across shell reloads.

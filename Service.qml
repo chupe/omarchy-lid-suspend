@@ -30,6 +30,7 @@ Item {
   readonly property string flagName: "lid-suspend-off"
   readonly property string togglesDir: Quickshell.env("HOME") + "/.local/state/omarchy/toggles"
   readonly property string flagPath: togglesDir + "/" + flagName
+  readonly property string inhibitorControlScript: Quickshell.env("HOME") + "/.config/omarchy/plugins/chupe.lid-suspend/inhibitor-control"
   readonly property string powerProfileScript: Quickshell.env("HOME") + "/.config/omarchy/plugins/chupe.lid-suspend/lid-power-profile"
 
   property bool ignoreLid: false
@@ -47,21 +48,6 @@ Item {
   // the flag on every read. Stopping the unit drops the inhibitor fd and lets
   // logind handle the lid again.
   readonly property string inhibitUnit: "chupe.lid-suspend-inhibit.service"
-  readonly property string inhibitorScript: [
-    'unit=$1 want=$2',
-    'if [[ $want == hold ]]; then',
-    '  if ! systemctl --user is-active --quiet "$unit"; then',
-    '    systemctl --user reset-failed "$unit" 2>/dev/null',
-    '    systemd-run --user --quiet --collect --unit="$unit" \\',
-    '      --description="Omarchy Lid Suspend: Ignore Lid Close is on" \\',
-    '      systemd-inhibit --what=handle-lid-switch --who="Omarchy Lid Suspend" \\',
-    '        --why="Ignore Lid Close is on" --mode=block sleep infinity',
-    '  fi',
-    'else',
-    '  systemctl --user stop --quiet "$unit" 2>/dev/null',
-    'fi',
-    'systemctl --user is-active --quiet "$unit" && echo held || echo released'
-  ].join("\n")
   property bool inhibitorHeld: false
   property bool inhibitorSyncPending: false
 
@@ -98,7 +84,7 @@ Item {
       inhibitorSyncPending = true
       return
     }
-    inhibitorSync.command = ["bash", "-c", inhibitorScript, "_", inhibitUnit, ignoreLid ? "hold" : "release"]
+    inhibitorSync.command = ["bash", inhibitorControlScript, ignoreLid ? "hold" : "release"]
     inhibitorSync.running = true
   }
 
