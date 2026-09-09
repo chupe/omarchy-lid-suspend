@@ -24,18 +24,29 @@ omarchy bar put chupe.lid-suspend --after omarchy.indicators
 ## Uninstall
 
 ```bash
+bash ~/.config/omarchy/plugins/chupe.lid-suspend/uninstall-cleanup
 omarchy plugin remove chupe.lid-suspend
-rm -f ~/.local/state/omarchy/toggles/lid-suspend-off
 ```
 
-Removing the plugin releases the inhibitor. The second line clears the saved
-state; skip it if you plan to reinstall.
+Run cleanup before removal while the plugin files still exist. It disables the
+toggle, releases the transient inhibitor, and restores any power profile saved
+for the current lid-close cycle.
 
 ## Dependencies
 
 Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`),
 `power-profiles-daemon`, `systemd-logind`, and D-Bus command-line tools.
 No sudo or pkexec is required.
+
+## Development
+
+The project-scoped mise config pins ShellCheck, aqtinstall, and Qt. Qt stays in
+mise's data directory and is activated only inside this project.
+
+```bash
+mise install
+mise run check
+```
 
 ## How it works
 

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: uninstall-cleanup"
+}
+
+case "${1:-}" in
+  "")
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+unit=chupe.lid-suspend-inhibit.service
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+omarchy-toggle lid-suspend-off off
+
+load_state=$(systemctl --user show --property=LoadState --value "$unit")
+if [[ $load_state != not-found ]]; then
+  systemctl --user stop --quiet "$unit"
+fi
+
+bash "$script_dir/lid-power-profile" open

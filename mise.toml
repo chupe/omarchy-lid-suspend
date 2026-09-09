@@ -1,0 +1,46 @@
+min_version = "2026.7.6"
+
+[tools]
+"pipx:aqtinstall" = "3.3.0"
+shellcheck = "0.11.0"
+
+[env]
+QT_SDK_ROOT = "{{env.HOME}}/.local/share/mise/installs/chupe-lid-suspend-qt"
+_.path = ["{{env.HOME}}/.local/share/mise/installs/chupe-lid-suspend-qt/6.11.2/gcc_64/bin"]
+
+[tasks.setup]
+description = "Install the pinned Qt SDK in mise's data directory"
+dir = "{{env.HOME}}/.local/share/mise"
+run = """
+if [[ ! -x "$QT_SDK_ROOT/6.11.2/gcc_64/bin/qmllint" ]]; then
+  aqt install-qt --base https://mirrors.dotsrc.org/qtproject \
+    --outputdir "$QT_SDK_ROOT" linux desktop 6.11.2 linux_gcc_64
+fi
+"""
+
+[tasks.lint]
+description = "Lint QML and shell sources"
+depends = ["setup"]
+dir = "{{config_root}}"
+run = """
+qmllint -I "${OMARCHY_PATH:-/usr/share/omarchy}/shell" BarWidget.qml Service.qml
+shellcheck lid-power-profile uninstall-cleanup tests/*.bash
+"""
+
+[tasks.test]
+description = "Run plugin regression tests"
+dir = "{{config_root}}"
+run = """
+for test in tests/*.bash; do
+  bash "$test"
+done
+"""
+
+[tasks.validate]
+description = "Validate the plugin manifest and repository"
+dir = "{{config_root}}"
+run = 'omarchy plugin validate "{{config_root}}"'
+
+[tasks.check]
+description = "Run all publication checks"
+depends = ["lint", "test", "validate"]

@@ -101,7 +101,8 @@ Item {
   }
 
   function refreshLidState() {
-    if (!lidStateProbe.running) lidStateProbe.running = true
+    // Process coalesces this into one rerun when a probe is already active.
+    lidStateProbe.running = true
   }
 
   function applyLidPowerProfile(closed) {
