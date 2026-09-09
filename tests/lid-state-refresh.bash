@@ -3,7 +3,7 @@
 set -euo pipefail
 
 plugin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-tmp_dir=$(mktemp -d "$plugin_dir/tmp.lid-state-refresh.XXXXXX")
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/chupe.lid-suspend.lid-state.XXXXXX")
 trap 'rm -rf -- "$tmp_dir"' EXIT
 
 refresh_function=$(

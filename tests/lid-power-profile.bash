@@ -3,7 +3,7 @@
 set -euo pipefail
 
 plugin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-tmp_dir=$(mktemp -d "$plugin_dir/tmp.test.XXXXXX")
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/chupe.lid-suspend.power-profile.XXXXXX")
 trap 'rm -rf -- "$tmp_dir"' EXIT
 
 export XDG_RUNTIME_DIR="$tmp_dir/runtime"

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 plugin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-tmp_dir=$(mktemp -d "$plugin_dir/tmp.uninstall-cleanup.XXXXXX")
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/chupe.lid-suspend.cleanup.XXXXXX")
 trap 'rm -rf -- "$tmp_dir"' EXIT
 
 cleanup="$plugin_dir/uninstall-cleanup"
