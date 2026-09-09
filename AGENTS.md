@@ -5,8 +5,13 @@
 Apply this gate while the installed Quickshell build lacks upstream fix
 [`afb2c27`](https://github.com/quickshell-mirror/quickshell/commit/afb2c27cd6d600d221d9379a332ee1b321a68487)
 or an equivalent backport. `quickshell 0.3.1-1` predates the fix; version alone
-does not prove a later package contains it. Remove this gate only after the
-installed package is confirmed to include the fix.
+does not prove a later package contains it. That commit only removes the abort:
+`QSWaylandSessionLockManager::active` is still cleared only by `unlock()`, so a
+lock destroyed by a plugin reload leaves a dangling pointer and the recovered
+lock can never be acquired again by that process (tracked in
+[Quickshell #1054](https://github.com/quickshell-mirror/quickshell/issues/1054)).
+Remove this gate only after the installed package is confirmed to include both
+fixes.
 
 Before changing lid, suspend, or session-lock behavior, and before every write
 that can hot-reload this plugin, run:
@@ -35,7 +40,11 @@ Affected Quickshell builds can fail to acquire a Wayland session lock, clear
 the requested lock target, then still call `updateSurfaces(true)`. The missing
 owned lock triggers a deliberate `qFatal()` and `SIGABRT`. Omarchy plugin reload
 can expose this path by destroying and recreating services around an active or
-stranded lock. See [Quickshell #296](https://github.com/quickshell-mirror/quickshell/issues/296).
+stranded lock. See [Quickshell #296](https://github.com/quickshell-mirror/quickshell/issues/296)
+(closed by `afb2c27`), [#1054](https://github.com/quickshell-mirror/quickshell/issues/1054)
+(open: Omarchy plugin reload over a stranded lock, dangling `active` pointer)
+and [#1086](https://github.com/quickshell-mirror/quickshell/issues/1086)
+(open: abort on failed lock request, `onScreensChanged` race).
 
 ## Validation
 
