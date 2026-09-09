@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "chupe.lid-suspend",
+  "name": "Lid Suspend",
+  "version": "0.1.0",
+  "author": "chupe",
+  "license": "MIT",
+  "homepage": "https://github.com/chupe/omarchy-lid-suspend",
+  "description": "Bar toggle that keeps the laptop awake when the lid closes",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Lid Suspend",
+    "description": "Icon that shows and toggles whether closing the lid suspends",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {
+      "alwaysShow": false
+    },
+    "schema": [
+      {
+        "key": "alwaysShow",
+        "type": "boolean",
+        "label": "Always Show",
+        "description": "Show the inactive icon without waiting for hover.",
+        "defaultValue": false
+      }
+    ]
+  }
+}
