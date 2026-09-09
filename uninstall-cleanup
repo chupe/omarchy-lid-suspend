@@ -23,6 +23,7 @@ unit=chupe.lid-suspend-inhibit.service
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 omarchy-toggle lid-suspend-off off
+omarchy plugin disable chupe.lid-suspend
 
 load_state=$(systemctl --user show --property=LoadState --value "$unit")
 if [[ $load_state != not-found ]]; then

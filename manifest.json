@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "chupe.lid-suspend",
   "name": "Lid Suspend",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "chupe",
   "license": "MIT",
   "homepage": "https://github.com/chupe/omarchy-lid-suspend",
@@ -11,7 +11,6 @@
     "service",
     "bar-widget"
   ],
-  "keepLoaded": true,
   "entryPoints": {
     "service": "Service.qml",
     "barWidget": "BarWidget.qml"

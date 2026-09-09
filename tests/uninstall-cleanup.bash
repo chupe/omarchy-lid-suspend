@@ -26,6 +26,11 @@ omarchy-toggle() {
   printf 'toggle %s\n' "$*" >>"$FAKE_CALLS"
 }
 
+omarchy() {
+  [[ ${1:-} == plugin && ${2:-} == disable && ${3:-} == chupe.lid-suspend ]] || return 2
+  printf 'plugin disable %s\n' "$3" >>"$FAKE_CALLS"
+}
+
 systemctl() {
   [[ ${1:-} == --user ]] || return 2
   shift
@@ -59,11 +64,11 @@ powerprofilesctl() {
   esac
 }
 
-export -f omarchy-toggle systemctl powerprofilesctl
+export -f omarchy-toggle omarchy systemctl powerprofilesctl
 
 bash "$cleanup"
 mapfile -t calls <"$FAKE_CALLS"
-[[ ${calls[*]} == "toggle lid-suspend-off off systemctl show systemctl stop profile set balanced" ]]
+[[ ${calls[*]} == "toggle lid-suspend-off off plugin disable chupe.lid-suspend systemctl show systemctl stop profile set balanced" ]]
 [[ $(<"$FAKE_POWER_PROFILE") == balanced ]]
 [[ ! -e $XDG_RUNTIME_DIR/chupe.lid-suspend/previous-power-profile ]]
 
@@ -71,7 +76,7 @@ mapfile -t calls <"$FAKE_CALLS"
 export FAKE_UNIT_LOAD_STATE=not-found
 bash "$cleanup"
 mapfile -t calls <"$FAKE_CALLS"
-[[ ${calls[*]} == "toggle lid-suspend-off off systemctl show" ]]
+[[ ${calls[*]} == "toggle lid-suspend-off off plugin disable chupe.lid-suspend systemctl show" ]]
 
 bash "$cleanup" --help | grep -q '^Usage:'
 if bash "$cleanup" invalid >"$tmp_dir/stdout" 2>"$tmp_dir/stderr"; then

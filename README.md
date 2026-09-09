@@ -15,28 +15,38 @@ and opening it restores the previous profile.
 omarchy plugin add https://github.com/chupe/omarchy-lid-suspend.git --enable
 ```
 
+Keep the session unlocked while Omarchy loads or updates the plugin.
+
 Optional: sit it next to the stock indicators so it reads as one of them.
 
 ```bash
-omarchy bar put chupe.lid-suspend --after omarchy.indicators
+omarchy bar move chupe.lid-suspend --after omarchy.indicators
 ```
 
-## Uninstall
+## Disable or uninstall
 
 ```bash
 bash ~/.config/omarchy/plugins/chupe.lid-suspend/uninstall-cleanup
+```
+
+Cleanup clears the setting, disables and unloads the plugin, releases the
+transient inhibitor, and restores any power profile saved for the current
+lid-close cycle. To remove the plugin after cleanup succeeds:
+
+```bash
 omarchy plugin remove chupe.lid-suspend
 ```
 
-Run cleanup before removal while the plugin files still exist. It disables the
-toggle, releases the transient inhibitor, and restores any power profile saved
-for the current lid-close cycle.
-
 ## Dependencies
 
-Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`),
-`power-profiles-daemon`, `systemd-logind`, and D-Bus command-line tools.
-No sudo or pkexec is required.
+Stock Omarchy Quattro provides every runtime dependency:
+
+- Omarchy: `omarchy-shell`, `omarchy-toggle`, `omarchy-toggle-enabled`
+- systemd: `systemctl`, `systemd-run`, `systemd-inhibit`, `busctl`
+- D-Bus and UPower: `dbus-monitor`, `org.freedesktop.UPower`
+- power-profiles-daemon: `powerprofilesctl`
+
+No extra package, sudo, pkexec, system unit, or configuration file is required.
 
 ## Development
 
@@ -62,9 +72,9 @@ mise run check
 - The unit belongs to `systemd --user`, not the shell, so a shell reload,
   restart, or crash neither drops nor duplicates the inhibitor. Every read of
   the flag reconciles the unit to it.
-- UPower lid events select `power-saver` on close. The profile active before
-  close is saved under `$XDG_RUNTIME_DIR` and restored on open, including
-  across shell reloads.
+- While Ignore Lid Close is enabled, UPower lid events select `power-saver` on
+  close. The profile active before close is saved under `$XDG_RUNTIME_DIR` and
+  restored on open or disable, including across shell reloads.
 - The icon behaves like an `omarchy.indicators` entry: collapsed while
   inactive, dimmed on hover of the bar's center section, full while active.
   `alwaysShow: true` in the widget settings keeps it visible.
@@ -87,6 +97,9 @@ shaped like the stock Stay Awake row:
 ```jsonc
 "trigger.toggle.lid-suspend": {"icon":"󰌢","label":"Ignore Lid Close","action":"omarchy-toggle lid-suspend-off","checked":"omarchy-toggle-enabled lid-suspend-off"},
 ```
+
+Remove that row manually when uninstalling; plugins cannot modify the shared
+menu extension file safely.
 
 ## Custom lid handlers
 

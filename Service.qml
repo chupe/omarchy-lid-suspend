@@ -17,9 +17,10 @@ import Quickshell.Services.UPower
 // through their own script can consult the same flag with
 // `omarchy-toggle-enabled lid-suspend-off`.
 //
-// Lid state comes from UPower. Closing the lid saves the current power profile
-// and selects power-saver; opening it restores the saved profile. The saved
-// profile lives in XDG_RUNTIME_DIR so shell reloads cannot lose it.
+// Lid state comes from UPower. While Ignore Lid Close is enabled, closing the
+// lid saves the current power profile and selects power-saver; opening the lid
+// or disabling the setting restores it. The saved profile lives in
+// XDG_RUNTIME_DIR so shell reloads cannot lose it.
 Item {
   id: root
 
@@ -65,13 +66,14 @@ Item {
   property bool inhibitorSyncPending: false
 
   function refresh() {
-    if (!stateProbe.running) stateProbe.running = true
+    stateProbe.running = true
   }
 
   function setIgnoreLid(value) {
     var enabled = !!value
     root.ignoreLid = enabled
     root.stateLoaded = true
+    root.reconcileLidPowerProfile()
 
     if (stateWriter.running) {
       root.pendingWrite = enabled
@@ -103,6 +105,16 @@ Item {
   function refreshLidState() {
     // Process coalesces this into one rerun when a probe is already active.
     lidStateProbe.running = true
+  }
+
+  function desiredLidPowerAction() {
+    if (!stateLoaded || !lidStateLoaded) return ""
+    return ignoreLid && lidClosed ? "close" : "open"
+  }
+
+  function reconcileLidPowerProfile() {
+    var action = desiredLidPowerAction()
+    if (action !== "") applyLidPowerProfile(action === "close")
   }
 
   function applyLidPowerProfile(closed) {
@@ -156,6 +168,7 @@ Item {
       onRead: function(line) {
         root.ignoreLid = String(line).trim() === "yes"
         root.stateLoaded = true
+        root.reconcileLidPowerProfile()
       }
     }
     onExited: function() {
@@ -211,7 +224,7 @@ Item {
         if (!root.lidStateLoaded || root.lidClosed !== closed) {
           root.lidClosed = closed
           root.lidStateLoaded = true
-          root.applyLidPowerProfile(closed)
+          root.reconcileLidPowerProfile()
         }
       }
     }
@@ -245,7 +258,8 @@ Item {
   Connections {
     target: PowerProfiles
     function onProfileChanged() {
-      if (root.lidStateLoaded && root.lidClosed && PowerProfiles.profile !== PowerProfile.PowerSaver)
+      if (root.stateLoaded && root.ignoreLid && root.lidStateLoaded && root.lidClosed
+          && PowerProfiles.profile !== PowerProfile.PowerSaver)
         root.applyLidPowerProfile(true)
     }
   }
