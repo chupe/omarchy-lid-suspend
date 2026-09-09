@@ -40,10 +40,14 @@ None beyond Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`) and
   written with the stock `omarchy-toggle lid-suspend-off` and readable with
   `omarchy-toggle-enabled lid-suspend-off`. Named for the off state like
   `suspend-off` and `screensaver-off`.
-- While the flag is set, the service holds one
+- While the flag is set, the service keeps the transient user unit
+  `chupe.lid-suspend-inhibit.service` running, which holds one
   `systemd-inhibit --what=handle-lid-switch --mode=block` inhibitor. logind
   always honors that inhibitor type, so lid close no longer suspends. Manual
   suspend and idle behavior are untouched.
+- The unit belongs to `systemd --user`, not the shell, so a shell reload,
+  restart, or crash neither drops nor duplicates the inhibitor. Every read of
+  the flag reconciles the unit to it.
 - The icon behaves like an `omarchy.indicators` entry: collapsed while
   inactive, dimmed on hover of the bar's center section, full while active.
   `alwaysShow: true` in the widget settings keeps it visible.
@@ -58,6 +62,7 @@ locks on lid close, with one attached the internal panel blanks.
 | Bar icon | click |
 | Shell IPC | `omarchy-shell chupe.lid-suspend status\|enable\|disable\|toggle` |
 | Any script | `omarchy-toggle lid-suspend-off [toggle\|on\|off]` |
+| Inhibitor | `systemctl --user status chupe.lid-suspend-inhibit.service` |
 
 Optional menu row for `~/.config/omarchy/extensions/omarchy-menu.jsonc`,
 shaped like the stock Stay Awake row:
