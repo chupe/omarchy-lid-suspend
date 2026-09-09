@@ -17,6 +17,10 @@ powerprofilesctl() {
       cat "$FAKE_POWER_PROFILE"
       ;;
     set)
+      if [[ $2 == power-saver && ${BLOCK_CLOSE:-0} == 1 ]]; then
+        printf 'started\n' >"$CLOSE_STARTED_FIFO"
+        read -r <"$CLOSE_RELEASE_FIFO"
+      fi
       printf '%s\n' "$2" >"$FAKE_POWER_PROFILE"
       ;;
     *)
@@ -47,6 +51,32 @@ printf 'power-saver\n' >"$FAKE_POWER_PROFILE"
 bash "$script" close
 bash "$script" open
 [[ $(<"$FAKE_POWER_PROFILE") == power-saver ]]
+
+printf 'balanced\n' >"$FAKE_POWER_PROFILE"
+rm -f "$profile_state"
+started_fifo="$tmp_dir/close-started"
+release_fifo="$tmp_dir/close-release"
+mkfifo "$started_fifo" "$release_fifo"
+export BLOCK_CLOSE=1
+export CLOSE_STARTED_FIFO="$started_fifo"
+export CLOSE_RELEASE_FIFO="$release_fifo"
+
+bash "$script" close &
+close_pid=$!
+read -r started <"$started_fifo"
+[[ $started == started ]]
+
+lock_file="$XDG_RUNTIME_DIR/chupe.lid-suspend/power-profile.lock"
+if flock --nonblock "$lock_file" true; then
+  printf 'release\n' >"$release_fifo"
+  wait "$close_pid"
+  echo "profile transition lock was not held during powerprofilesctl" >&2
+  exit 1
+fi
+
+printf 'release\n' >"$release_fifo"
+wait "$close_pid"
+unset BLOCK_CLOSE CLOSE_STARTED_FIFO CLOSE_RELEASE_FIFO
 
 bash "$script" --help | grep -q '^Usage:'
 if bash "$script" invalid >"$tmp_dir/stdout" 2>"$tmp_dir/stderr"; then

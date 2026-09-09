@@ -23,6 +23,14 @@ Optional: sit it next to the stock indicators so it reads as one of them.
 omarchy bar move chupe.lid-suspend --after omarchy.indicators
 ```
 
+## Update
+
+Keep the session unlocked, then update through Omarchy:
+
+```bash
+omarchy plugin update chupe.lid-suspend
+```
+
 ## Disable or uninstall
 
 ```bash
@@ -45,6 +53,7 @@ Stock Omarchy Quattro provides every runtime dependency:
 - systemd: `systemctl`, `systemd-run`, `systemd-inhibit`, `busctl`
 - D-Bus and UPower: `dbus-monitor`, `org.freedesktop.UPower`
 - power-profiles-daemon: `powerprofilesctl`
+- util-linux: `flock`
 
 No extra package, sudo, pkexec, system unit, or configuration file is required.
 
@@ -75,6 +84,8 @@ mise run check
 - While Ignore Lid Close is enabled, UPower lid events select `power-saver` on
   close. The profile active before close is saved under `$XDG_RUNTIME_DIR` and
   restored on open or disable, including across shell reloads.
+- Profile transitions use a runtime-directory lock, so cleanup waits for any
+  transition that survived service teardown before restoring the saved profile.
 - The icon behaves like an `omarchy.indicators` entry: collapsed while
   inactive, dimmed on hover of the bar's center section, full while active.
   `alwaysShow: true` in the widget settings keeps it visible.

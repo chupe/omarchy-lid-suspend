@@ -9,10 +9,19 @@ usage() {
 runtime_dir=${XDG_RUNTIME_DIR:-/run/user/"$(id -u)"}
 state_dir="$runtime_dir/chupe.lid-suspend"
 profile_state="$state_dir/previous-power-profile"
+lock_file="$state_dir/power-profile.lock"
+
+# A helper orphaned during shell teardown can finish after cleanup starts.
+# Serializing every transition makes the final restore wait for that work.
+lock_profile_state() {
+  mkdir -p "$state_dir"
+  exec {profile_lock_fd}>"$lock_file"
+  flock "$profile_lock_fd"
+}
 
 case "${1:-}" in
   close)
-    mkdir -p "$state_dir"
+    lock_profile_state
     if [[ ! -e $profile_state ]]; then
       previous_profile=$(powerprofilesctl get)
       case "$previous_profile" in
@@ -29,6 +38,7 @@ case "${1:-}" in
     powerprofilesctl set power-saver
     ;;
   open)
+    lock_profile_state
     [[ -e $profile_state ]] || exit 0
     previous_profile=$(<"$profile_state")
     case "$previous_profile" in
