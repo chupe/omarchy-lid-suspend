@@ -6,6 +6,8 @@ which only covers idle lock and screensaver.
 
 The setting survives reboots and shell restarts, and it is a plain flag file,
 so keybinds, menu rows, and your own lid scripts can read or flip it.
+While lid suspend is disabled, closing the lid selects the power-saver profile
+and opening it restores the previous profile.
 
 ## Install
 
@@ -31,8 +33,9 @@ state; skip it if you plan to reinstall.
 
 ## Dependencies
 
-None beyond Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`) and
-`systemd-logind`. No sudo or pkexec is required.
+Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`),
+`power-profiles-daemon`, `systemd-logind`, and D-Bus command-line tools.
+No sudo or pkexec is required.
 
 ## How it works
 
@@ -48,6 +51,9 @@ None beyond Omarchy Quattro (`omarchy-shell`, `omarchy-toggle`) and
 - The unit belongs to `systemd --user`, not the shell, so a shell reload,
   restart, or crash neither drops nor duplicates the inhibitor. Every read of
   the flag reconciles the unit to it.
+- UPower lid events select `power-saver` on close. The profile active before
+  close is saved under `$XDG_RUNTIME_DIR` and restored on open, including
+  across shell reloads.
 - The icon behaves like an `omarchy.indicators` entry: collapsed while
   inactive, dimmed on hover of the bar's center section, full while active.
   `alwaysShow: true` in the widget settings keeps it visible.
@@ -68,7 +74,7 @@ Optional menu row for `~/.config/omarchy/extensions/omarchy-menu.jsonc`,
 shaped like the stock Stay Awake row:
 
 ```jsonc
-"trigger.toggle.lid-suspend": {"icon":"󰌢","label":"Ignore Lid Close","action":"omarchy-toggle lid-suspend-off"},
+"trigger.toggle.lid-suspend": {"icon":"󰌢","label":"Ignore Lid Close","action":"omarchy-toggle lid-suspend-off","checked":"omarchy-toggle-enabled lid-suspend-off"},
 ```
 
 ## Custom lid handlers

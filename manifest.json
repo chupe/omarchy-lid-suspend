@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "id": "chupe.lid-suspend",
   "name": "Lid Suspend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "chupe",
   "license": "MIT",
   "homepage": "https://github.com/chupe/omarchy-lid-suspend",
-  "description": "Bar toggle that keeps the laptop awake when the lid closes",
+  "description": "Keeps the laptop awake in power-saver mode with the lid closed",
   "kinds": [
     "service",
     "bar-widget"

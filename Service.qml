@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.UPower
 
 // Singleton state for the lid-suspend toggle. One instance per shell, so the
 // logind inhibitor is held exactly once no matter how many bars show the icon.
@@ -15,6 +16,10 @@ import Quickshell.Io
 // stock Omarchy, where logind owns the lid switch. Setups that route lid close
 // through their own script can consult the same flag with
 // `omarchy-toggle-enabled lid-suspend-off`.
+//
+// Lid state comes from UPower. Closing the lid saves the current power profile
+// and selects power-saver; opening it restores the saved profile. The saved
+// profile lives in XDG_RUNTIME_DIR so shell reloads cannot lose it.
 Item {
   id: root
 
@@ -24,11 +29,15 @@ Item {
   readonly property string flagName: "lid-suspend-off"
   readonly property string togglesDir: Quickshell.env("HOME") + "/.local/state/omarchy/toggles"
   readonly property string flagPath: togglesDir + "/" + flagName
+  readonly property string powerProfileScript: Quickshell.env("HOME") + "/.config/omarchy/plugins/chupe.lid-suspend/lid-power-profile"
 
   property bool ignoreLid: false
   property bool stateLoaded: false
   property bool hasPendingWrite: false
   property bool pendingWrite: false
+  property bool lidClosed: false
+  property bool lidStateLoaded: false
+  property string pendingLidAction: ""
 
   // The inhibitor is a transient user unit, not a child of the shell. A shell
   // reload or crash orphans children (the shell re-execs under the same pid, so
@@ -91,13 +100,32 @@ Item {
     inhibitorSync.running = true
   }
 
+  function refreshLidState() {
+    if (!lidStateProbe.running) lidStateProbe.running = true
+  }
+
+  function applyLidPowerProfile(closed) {
+    pendingLidAction = closed ? "close" : "open"
+    if (!lidPowerProfile.running) runPendingLidAction()
+  }
+
+  function runPendingLidAction() {
+    var action = pendingLidAction
+    pendingLidAction = ""
+    lidPowerProfile.command = ["bash", powerProfileScript, action]
+    lidPowerProfile.running = true
+  }
+
   function statusJson() {
     return JSON.stringify({
       enabled: root.ignoreLid,
       stateLoaded: root.stateLoaded,
       flagPath: root.flagPath,
       inhibitUnit: root.inhibitUnit,
-      inhibitorHeld: root.inhibitorHeld
+      inhibitorHeld: root.inhibitorHeld,
+      lidClosed: root.lidClosed,
+      lidStateLoaded: root.lidStateLoaded,
+      powerProfileTransitionPending: root.pendingLidAction !== "" || lidPowerProfile.running
     })
   }
 
@@ -148,6 +176,56 @@ Item {
     }
   }
 
+  Process {
+    id: lidStateMonitor
+    command: [
+      "dbus-monitor",
+      "--system",
+      "type='signal',sender='org.freedesktop.UPower',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/freedesktop/UPower'"
+    ]
+    running: true
+    stdout: SplitParser {
+      onRead: function(line) {
+        if (String(line).indexOf('"LidIsClosed"') !== -1) root.refreshLidState()
+      }
+    }
+    stderr: SplitParser {
+      onRead: function(line) { console.warn("chupe.lid-suspend: lid monitor:", String(line).trim()) }
+    }
+  }
+
+  Process {
+    id: lidStateProbe
+    command: [
+      "busctl",
+      "get-property",
+      "org.freedesktop.UPower",
+      "/org/freedesktop/UPower",
+      "org.freedesktop.UPower",
+      "LidIsClosed"
+    ]
+    stdout: SplitParser {
+      onRead: function(line) {
+        var closed = String(line).trim() === "b true"
+        if (!root.lidStateLoaded || root.lidClosed !== closed) {
+          root.lidClosed = closed
+          root.lidStateLoaded = true
+          root.applyLidPowerProfile(closed)
+        }
+      }
+    }
+  }
+
+  Process {
+    id: lidPowerProfile
+    stderr: SplitParser {
+      onRead: function(line) { console.warn("chupe.lid-suspend: power profile:", String(line).trim()) }
+    }
+    onExited: function() {
+      if (root.pendingLidAction !== "") root.runPendingLidAction()
+    }
+  }
+
   // Watching the directory (not the flag) is what makes external toggles show
   // up: a watcher on a missing file never fires when the file is created.
   FileView {
@@ -158,7 +236,18 @@ Item {
     onFileChanged: root.refresh()
   }
 
-  Component.onCompleted: refresh()
+  Component.onCompleted: {
+    refresh()
+    refreshLidState()
+  }
+
+  Connections {
+    target: PowerProfiles
+    function onProfileChanged() {
+      if (root.lidStateLoaded && root.lidClosed && PowerProfiles.profile !== PowerProfile.PowerSaver)
+        root.applyLidPowerProfile(true)
+    }
+  }
 
   IpcHandler {
     target: "chupe.lid-suspend"

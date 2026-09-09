@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: lid-power-profile close|open"
+}
+
+runtime_dir=${XDG_RUNTIME_DIR:-/run/user/"$(id -u)"}
+state_dir="$runtime_dir/chupe.lid-suspend"
+profile_state="$state_dir/previous-power-profile"
+
+case "${1:-}" in
+  close)
+    mkdir -p "$state_dir"
+    if [[ ! -e $profile_state ]]; then
+      previous_profile=$(powerprofilesctl get)
+      case "$previous_profile" in
+        power-saver | balanced | performance) ;;
+        *)
+          echo "Unsupported power profile: $previous_profile" >&2
+          exit 1
+          ;;
+      esac
+
+      printf '%s\n' "$previous_profile" >"$profile_state.tmp"
+      mv "$profile_state.tmp" "$profile_state"
+    fi
+    powerprofilesctl set power-saver
+    ;;
+  open)
+    [[ -e $profile_state ]] || exit 0
+    previous_profile=$(<"$profile_state")
+    case "$previous_profile" in
+      power-saver | balanced | performance) ;;
+      *)
+        echo "Unsupported saved power profile: $previous_profile" >&2
+        exit 1
+        ;;
+    esac
+
+    powerprofilesctl set "$previous_profile"
+    rm -f "$profile_state"
+    ;;
+  -h | --help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
