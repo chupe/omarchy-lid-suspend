@@ -55,7 +55,8 @@ Stock Omarchy Quattro provides every runtime dependency:
 - power-profiles-daemon: `powerprofilesctl`
 - util-linux: `flock`
 
-No extra package, sudo, pkexec, system unit, or configuration file is required.
+Every runtime command runs as the current desktop user. No additional package,
+installed system unit, or configuration file is required.
 
 ## Development
 
