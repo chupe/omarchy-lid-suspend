@@ -18,7 +18,8 @@ export FAKE_CALLS="$tmp_dir/calls"
 export FAKE_POWER_PROFILE="$tmp_dir/profile"
 export FAKE_UNIT_LOAD_STATE=loaded
 
-mkdir -p "$XDG_RUNTIME_DIR/chupe.lid-suspend"
+mkdir -m 700 "$XDG_RUNTIME_DIR"
+mkdir -m 700 "$XDG_RUNTIME_DIR/chupe.lid-suspend"
 printf 'power-saver\n' >"$FAKE_POWER_PROFILE"
 printf 'balanced\n' >"$XDG_RUNTIME_DIR/chupe.lid-suspend/previous-power-profile"
 

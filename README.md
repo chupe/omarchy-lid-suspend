@@ -53,7 +53,7 @@ Stock Omarchy Quattro provides every runtime dependency:
 - systemd: `systemctl`, `systemd-run`, `systemd-inhibit`, `busctl`
 - D-Bus and UPower: `dbus-monitor`, `org.freedesktop.UPower`
 - power-profiles-daemon: `powerprofilesctl`
-- util-linux: `flock`
+- Python: `python3`
 
 Every runtime command runs as the current desktop user. No additional package,
 installed system unit, or configuration file is required.
@@ -90,8 +90,12 @@ safety gate used during development.
 - While Ignore Lid Close is enabled, UPower lid events select `power-saver` on
   close. The profile active before close is saved under `$XDG_RUNTIME_DIR` and
   restored on open or disable, including across shell reloads.
-- Profile transitions use a runtime-directory lock, so cleanup waits for any
-  transition that survived service teardown before restoring the saved profile.
+- Runtime state and locks use a current-user, mode-0700 directory opened without
+  following symlinks. State writes use randomized exclusive temporary files,
+  `fsync`, and same-directory atomic replacement.
+- Profile transitions use the same secure runtime-directory locking, so cleanup
+  waits for any transition that survived service teardown before restoring the
+  saved profile.
 - The icon behaves like an `omarchy.indicators` entry: collapsed while
   inactive, dimmed on hover of the bar's center section, full while active.
   `alwaysShow: true` in the widget settings keeps it visible.

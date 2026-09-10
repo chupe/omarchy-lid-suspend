@@ -28,7 +28,7 @@ export FAKE_CALLS="$tmp_dir/calls"
 export FAKE_UNIT_STATE="$tmp_dir/unit-state"
 export FAKE_CHILD_PID_FILE="$fake_child_pid_file"
 export FAKE_LOAD_STATE=loaded
-mkdir -p "$XDG_RUNTIME_DIR"
+mkdir -m 700 "$XDG_RUNTIME_DIR"
 printf 'inactive\n' >"$FAKE_UNIT_STATE"
 
 systemctl() {

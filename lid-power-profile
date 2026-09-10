@@ -6,23 +6,37 @@ usage() {
   echo "Usage: lid-power-profile close|open"
 }
 
-runtime_dir=${XDG_RUNTIME_DIR:-/run/user/"$(id -u)"}
-state_dir="$runtime_dir/chupe.lid-suspend"
-profile_state="$state_dir/previous-power-profile"
-lock_file="$state_dir/power-profile.lock"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+state_tool="$script_dir/runtime_state.py"
+action=${1:-}
 
-# A helper orphaned during shell teardown can finish after cleanup starts.
-# Serializing every transition makes the final restore wait for that work.
-lock_profile_state() {
-  mkdir -p "$state_dir"
-  exec {profile_lock_fd}>"$lock_file"
-  flock "$profile_lock_fd"
-}
+case "$action" in
+  close | open)
+    if [[ ${2:-} != --locked ]]; then
+      exec python3 "$state_tool" with-lock power-profile.lock \
+        bash "$0" "$action" --locked
+    fi
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
 
-case "${1:-}" in
+case "$action" in
   close)
-    lock_profile_state
-    if [[ ! -e $profile_state ]]; then
+    if previous_profile=$(python3 "$state_tool" read previous-power-profile); then
+      :
+    else
+      status=$?
+      if ((status != 3)); then
+        exit "$status"
+      fi
+
       previous_profile=$(powerprofilesctl get)
       case "$previous_profile" in
         power-saver | balanced | performance) ;;
@@ -31,16 +45,21 @@ case "${1:-}" in
           exit 1
           ;;
       esac
-
-      printf '%s\n' "$previous_profile" >"$profile_state.tmp"
-      mv "$profile_state.tmp" "$profile_state"
+      python3 "$state_tool" write previous-power-profile "$previous_profile"
     fi
     powerprofilesctl set power-saver
     ;;
   open)
-    lock_profile_state
-    [[ -e $profile_state ]] || exit 0
-    previous_profile=$(<"$profile_state")
+    if previous_profile=$(python3 "$state_tool" read previous-power-profile); then
+      :
+    else
+      status=$?
+      if ((status == 3)); then
+        exit 0
+      fi
+      exit "$status"
+    fi
+
     case "$previous_profile" in
       power-saver | balanced | performance) ;;
       *)
@@ -48,15 +67,7 @@ case "${1:-}" in
         exit 1
         ;;
     esac
-
     powerprofilesctl set "$previous_profile"
-    rm -f "$profile_state"
-    ;;
-  -h | --help)
-    usage
-    ;;
-  *)
-    usage >&2
-    exit 2
+    python3 "$state_tool" remove previous-power-profile
     ;;
 esac

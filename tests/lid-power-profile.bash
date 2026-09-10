@@ -8,7 +8,7 @@ trap 'rm -rf -- "$tmp_dir"' EXIT
 
 export XDG_RUNTIME_DIR="$tmp_dir/runtime"
 export FAKE_POWER_PROFILE="$tmp_dir/profile"
-mkdir -p "$XDG_RUNTIME_DIR"
+mkdir -m 700 "$XDG_RUNTIME_DIR"
 printf 'balanced\n' >"$FAKE_POWER_PROFILE"
 
 powerprofilesctl() {

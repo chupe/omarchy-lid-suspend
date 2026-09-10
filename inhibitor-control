@@ -19,14 +19,13 @@ case "$mode" in
     ;;
 esac
 
-runtime_dir=${XDG_RUNTIME_DIR:-/run/user/"$(id -u)"}
-state_dir="$runtime_dir/chupe.lid-suspend"
-lock_file="$state_dir/inhibitor.lock"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+state_tool="$script_dir/runtime_state.py"
 unit=chupe.lid-suspend-inhibit.service
 
 if [[ ${2:-} != --locked ]]; then
-  mkdir -p "$state_dir"
-  exec flock "$lock_file" bash "$0" "$mode" --locked
+  exec python3 "$state_tool" with-lock inhibitor.lock \
+    bash "$0" "$mode" --locked
 fi
 
 case "$mode" in
