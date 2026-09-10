@@ -68,6 +68,9 @@ mise install
 mise run check
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the temporary Quickshell reload
+safety gate used during development.
+
 ## How it works
 
 - State is the flag file `~/.local/state/omarchy/toggles/lid-suspend-off`,

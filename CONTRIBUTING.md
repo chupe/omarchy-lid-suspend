@@ -1,6 +1,6 @@
-# Lid Suspend Agent Rules
+# Contributing to Lid Suspend
 
-## Quickshell Pre-Fix Safety Gate
+## Quickshell Pre-Fix Development Gate
 
 Apply this gate while the installed Quickshell build lacks upstream fix
 [`afb2c27`](https://github.com/quickshell-mirror/quickshell/commit/afb2c27cd6d600d221d9379a332ee1b321a68487)
